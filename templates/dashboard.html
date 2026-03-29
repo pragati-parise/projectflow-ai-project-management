@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% set title = "Dashboard" %}
+{% block content %}
+<section class="page-head">
+    <h1>Project Dashboard</h1>
+    <form class="search-form" method="GET" action="{{ url_for('dashboard') }}">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search projects by name or description...">
+        <button class="btn" type="submit">Search</button>
+    </form>
+</section>
+
+<section class="card form-panel">
+    <h2>Create Project</h2>
+    <form class="form-grid" method="POST" action="{{ url_for('create_project') }}">
+        <label>Project Name</label>
+        <input type="text" name="name" required>
+        <label>Description</label>
+        <textarea name="description" rows="2" placeholder="Project goals, scope, notes..."></textarea>
+        <button class="btn" type="submit">Create Project</button>
+    </form>
+</section>
+
+<section class="projects-grid">
+    {% for project in projects %}
+        {% set progress = ((project["done_tasks"] / project["total_tasks"]) * 100) if project["total_tasks"] > 0 else 0 %}
+        <article class="card project-card">
+            <a class="project-title" href="{{ url_for('project_detail', project_id=project['id']) }}">{{ project["name"] }}</a>
+            <p>{{ project["description"] or "No description provided." }}</p>
+
+            <div class="progress-row">
+                <span>{{ project["done_tasks"] }}/{{ project["total_tasks"] }} tasks done</span>
+                <span>{{ progress|round(0)|int }}%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ progress }}%;"></div>
+            </div>
+
+            <details class="edit-block">
+                <summary>Edit Project</summary>
+                <form class="form-grid mt-8" method="POST" action="{{ url_for('edit_project', project_id=project['id']) }}">
+                    <label>Name</label>
+                    <input type="text" name="name" value="{{ project['name'] }}" required>
+                    <label>Description</label>
+                    <textarea name="description" rows="2">{{ project["description"] }}</textarea>
+                    <button class="btn" type="submit">Save Changes</button>
+                </form>
+            </details>
+
+            <form method="POST" action="{{ url_for('delete_project', project_id=project['id']) }}" onsubmit="return confirm('Delete this project and all tasks?');">
+                <button class="btn btn-danger w-full" type="submit">Delete Project</button>
+            </form>
+        </article>
+    {% else %}
+        <div class="card">
+            <p>No projects found. Create your first project above.</p>
+        </div>
+    {% endfor %}
+</section>
+{% endblock %}

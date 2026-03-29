@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% set title = "Login" %}
+{% block content %}
+<section class="auth-wrap">
+    <h1>Login</h1>
+    <form class="card form-grid" method="POST" action="{{ url_for('login') }}">
+        <label>Email</label>
+        <input name="email" type="email" required>
+
+        <label>Password</label>
+        <input name="password" type="password" required>
+
+        <button class="btn" type="submit">Login</button>
+    </form>
+    <p>New here? <a href="{{ url_for('signup') }}">Create an account</a></p>
+</section>
+{% endblock %}

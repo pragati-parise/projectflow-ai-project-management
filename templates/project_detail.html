@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% set title = project["name"] %}
+{% block content %}
+<section class="page-head">
+    <div>
+        <h1>{{ project["name"] }}</h1>
+        <p>{{ project["description"] or "No description." }}</p>
+    </div>
+    <a class="btn" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+</section>
+
+<section class="two-col">
+    <article class="card">
+        <h2>Create Task</h2>
+        <form class="form-grid" method="POST" action="{{ url_for('create_task', project_id=project['id']) }}">
+            <label>Title</label>
+            <input type="text" name="title" required>
+
+            <label>Description</label>
+            <textarea name="description" rows="2"></textarea>
+
+            <label>Due Date</label>
+            <input type="date" min="{{ now }}" name="due_date">
+
+            <label>Priority</label>
+            <select name="priority">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+            </select>
+
+            <label>Assign To</label>
+            <select name="assigned_to">
+                <option value="">Unassigned</option>
+                {% for member in members %}
+                    <option value="{{ member['id'] }}">{{ member["name"] }} ({{ member["email"] }})</option>
+                {% endfor %}
+            </select>
+
+            <button class="btn" type="submit">Create Task</button>
+        </form>
+    </article>
+
+    <article class="card">
+        <h2>Team Collaboration</h2>
+        <p>Project members can view, update, and comment on tasks.</p>
+
+        <div class="member-list">
+            {% for member in members %}
+                <div class="member-row">
+                    <span>{{ member["name"] }} ({{ member["email"] }})</span>
+                    {% if current_user and project["owner_id"] == current_user["id"] and member["id"] != project["owner_id"] %}
+                        <form method="POST" action="{{ url_for('remove_member', project_id=project['id'], member_id=member['id']) }}">
+                            <button class="btn btn-danger btn-sm" type="submit">Remove</button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if current_user and project["owner_id"] == current_user["id"] %}
+            <form class="form-inline mt-8" method="POST" action="{{ url_for('add_member', project_id=project['id']) }}">
+                <select name="user_id">
+                    <option value="">Add user to project...</option>
+                    {% for user in non_members %}
+                        <option value="{{ user['id'] }}">{{ user["name"] }} ({{ user["email"] }})</option>
+                    {% endfor %}
+                </select>
+                <button class="btn" type="submit">Add Member</button>
+            </form>
+        {% endif %}
+    </article>
+</section>
+
+<section class="board" data-project-id="{{ project['id'] }}">
+    {% set labels = {"todo": "To Do", "in_progress": "In Progress", "done": "Done"} %}
+    {% for status in ["todo", "in_progress", "done"] %}
+        <div class="column" data-status="{{ status }}">
+            <h3>{{ labels[status] }}</h3>
+            <div class="dropzone" data-status="{{ status }}">
+                {% for task in status_groups[status] %}
+                    <article class="task-card" draggable="true" data-task-id="{{ task['id'] }}">
+                        <div class="task-head">
+                            <strong>{{ task["title"] }}</strong>
+                            <span class="badge badge-{{ task['priority'] }}">{{ task["priority"]|upper }}</span>
+                        </div>
+                        <p>{{ task["description"] or "No description." }}</p>
+                        <p><b>Due:</b> {{ task["due_date"] or "Not set" }}</p>
+                        <p><b>Assigned:</b> {{ task["assignee_name"] or "Unassigned" }}</p>
+                        <p><b>Created by:</b> {{ task["creator_name"] }}</p>
+
+                        <details class="edit-block">
+                            <summary>Edit Task</summary>
+                            <form class="form-grid mt-8" method="POST" action="{{ url_for('edit_task', task_id=task['id']) }}">
+                                <label>Title</label>
+                                <input type="text" name="title" value="{{ task['title'] }}" required>
+                                <label>Description</label>
+                                <textarea name="description" rows="2">{{ task["description"] }}</textarea>
+                                <label>Due Date</label>
+                                <input type="date" name="due_date" min="{{ now }}" value="{{ task['due_date'] or '' }}">
+                                <label>Priority</label>
+                                <select name="priority">
+                                    <option value="low" {% if task["priority"]=="low" %}selected{% endif %}>Low</option>
+                                    <option value="medium" {% if task["priority"]=="medium" %}selected{% endif %}>Medium</option>
+                                    <option value="high" {% if task["priority"]=="high" %}selected{% endif %}>High</option>
+                                </select>
+                                <label>Status</label>
+                                <select name="status">
+                                    <option value="todo" {% if task["status"]=="todo" %}selected{% endif %}>To Do</option>
+                                    <option value="in_progress" {% if task["status"]=="in_progress" %}selected{% endif %}>In Progress</option>
+                                    <option value="done" {% if task["status"]=="done" %}selected{% endif %}>Done</option>
+                                </select>
+                                <label>Assign To</label>
+                                <select name="assigned_to">
+                                    <option value="">Unassigned</option>
+                                    {% for member in members %}
+                                        <option value="{{ member['id'] }}" {% if task["assigned_to"] == member["id"] %}selected{% endif %}>
+                                            {{ member["name"] }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-sm" type="submit">Save Task</button>
+                            </form>
+                        </details>
+
+                        <form class="mt-8" method="POST" action="{{ url_for('delete_task', task_id=task['id']) }}" onsubmit="return confirm('Delete task?');">
+                            <button class="btn btn-danger btn-sm" type="submit">Delete Task</button>
+                        </form>
+
+                        <div class="comments">
+                            <h4>Comments</h4>
+                            {% for comment in comments_by_task.get(task["id"], []) %}
+                                <div class="comment-item">
+                                    <b>{{ comment["author_name"] }}</b>: {{ comment["content"] }}
+                                    <span class="muted">{{ comment["created_at"] }}</span>
+                                </div>
+                            {% else %}
+                                <p class="muted">No comments yet.</p>
+                            {% endfor %}
+                            <form method="POST" action="{{ url_for('add_comment', task_id=task['id']) }}">
+                                <input type="text" name="content" placeholder="Write a comment..." required>
+                                <button class="btn btn-sm" type="submit">Comment</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+</section>
+{% endblock %}
