@@ -59,18 +59,3 @@ Example:
 SECRET_KEY=replace-with-a-long-random-secret
 DATABASE_URL=postgresql://username:password@hostname:5432/database_name
 ```
-
-## Deploy (Render)
-1. Push this repo to GitHub
-2. Create a new Render Web Service from the repo
-3. Build command:
-   - `pip install -r requirements.txt`
-4. Start command:
-   - `gunicorn app:app`
-5. Add env vars:
-   - `SECRET_KEY`
-   - optional `DATABASE_URL`
-
-## Notes
-- SQLite is good for local development.
-- PostgreSQL is recommended for production.
