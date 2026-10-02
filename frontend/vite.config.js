@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
 
 export default defineConfig(({ command }) => ({
-  // In development the browser talks to Vite; Vite forwards API calls to FastAPI.
-  // In production the built files are served by FastAPI from /static/dist/.
-  base: command === "build" ? "/static/dist/" : "/",
+  // In development Vite proxies API calls to FastAPI. Set VITE_ASSET_BASE=/ when
+  // deploying the frontend as a Render Static Site. The default keeps the
+  // combined FastAPI + frontend deployment working from /static/dist/.
+  base: command === "build" ? (process.env.VITE_ASSET_BASE || "/static/dist/") : "/",
   server: {
     host: "127.0.0.1",
     port: 5173,

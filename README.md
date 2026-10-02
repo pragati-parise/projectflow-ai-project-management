@@ -12,7 +12,7 @@ ProjectFlow helps a small team plan projects, assign work, track progress on a K
 - Switch between light and dark appearance.
 - Review Gemini task breakdown suggestions before choosing to save them.
 - Ask Gemini workspace questions using the authenticated user's assigned tasks, or project questions using that project's task details.
-- Responsive React interface served by FastAPI.
+- Responsive React interface that can be deployed as a separate static site or bundled with FastAPI.
 
 ## Stack and architecture
 
@@ -119,3 +119,7 @@ Never commit `.env`. Only `.env.example` with placeholders belongs in Git.
 3. The assignment menu is populated from the current project's members. The API repeats this check on every create/edit, so non-members cannot be assigned through a crafted request.
 4. The board updates task status through the task API. AI breakdown suggestions remain in React until the user confirms selected tasks.
 5. For workspace assistant questions, the API includes the authenticated user's assigned tasks. For project-specific questions, it checks project access and includes only that project and its tasks in the Gemini prompt.
+
+## Deployment
+
+Deploy the Vite frontend as a Render Static Site and FastAPI as a separate Render Web Service, with Neon PostgreSQL as the database. Follow [DEPLOYMENT.md](DEPLOYMENT.md) for the required build settings, URLs, CORS origin, and environment variables. The frontend's `VITE_API_URL` is public configuration; database and API secrets belong only in the backend environment.

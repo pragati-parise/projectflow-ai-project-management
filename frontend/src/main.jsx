@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./projectflow.css";
-const API = "";
+const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 function errorText(response, data) {
   const detail = data?.detail ?? data?.message ?? response.statusText;
