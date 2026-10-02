@@ -1,10 +1,12 @@
-const { useEffect, useMemo, useState } = React;
+import React, { useEffect, useMemo, useState } from "react";
+import { createRoot } from "react-dom/client";
+import "./projectflow.css";
 const API = "";
 
 function errorText(response, data) {
   const detail = data?.detail ?? data?.message ?? response.statusText;
   const readable = typeof detail === "string" ? detail : JSON.stringify(detail, null, 2);
-  return `HTTP ${response.status}\n${readable}${window.PROJECTFLOW_DEV && data?.traceback ? `\n\n${data.traceback}` : ""}`;
+  return `HTTP ${response.status}\n${readable}${import.meta.env.DEV && data?.traceback ? `\n\n${data.traceback}` : ""}`;
 }
 async function api(path, options = {}) {
   const headers = { ...(options.body ? { "Content-Type": "application/json" } : {}), ...(localStorage.getItem("projectflow_token") ? { Authorization: `Bearer ${localStorage.getItem("projectflow_token")}` } : {}), ...options.headers };
@@ -93,5 +95,5 @@ function App() {
   </div>;
 }
 
-const root = ReactDOM.createRoot(document.getElementById("react-root"));
+const root = createRoot(document.getElementById("react-root"));
 root.render(<App/>);

@@ -1,38 +1,20 @@
-# Deployment Guide
+# Deployment guide
 
-## Is This Necessary?
-- `Procfile` + `gunicorn`: recommended for production hosting.
-- env-based `SECRET_KEY`: required for secure production.
-- PostgreSQL migration: optional, but strongly recommended for cloud hosting stability.
+ProjectFlow is an ASGI app. Use a Python hosting service with Node.js available during build and a managed PostgreSQL database.
 
-## Environment Variables
-- `SECRET_KEY`: required in production.
-- `DATABASE_URL`: optional.
-  - If not set, app uses local SQLite (`project_manager.db`).
-  - If set, app uses PostgreSQL and initializes `schema_postgres.sql`.
+## Configure the service
 
-## Run Locally
-```bash
-pip install -r requirements.txt
-python app.py
-```
+- Build command: `pip install -r requirements.txt && npm --prefix frontend install && npm --prefix frontend run build`
+- Start command: `uvicorn app:app --host 0.0.0.0 --port $PORT`
+- Set environment variables: `DATABASE_URL`, `JWT_SECRET_KEY`, `APP_ENV=production`, `FRONTEND_URL`, and `GEMINI_API_KEY` when enabling AI.
+- Do not upload `.env` or `project_manager.db` to the public repository.
+- Keep the JWT secret stable across service instances, but generate a different secret for each environment.
+- Use the database URL and SSL settings supplied by the PostgreSQL host.
 
-## Run With Gunicorn (production-like local run)
-```bash
-gunicorn app:app
-```
+## First deployment
 
-## Render Hosting
-1. Push project to GitHub.
-2. Create a new Web Service in Render.
-3. Build command:
-   - `pip install -r requirements.txt`
-4. Start command:
-   - `gunicorn app:app`
-5. Add env vars in Render:
-   - `SECRET_KEY=<strong-secret>`
-   - Optional: `DATABASE_URL=<managed-postgres-url>`
+The build command creates `static/dist`, which FastAPI serves as the frontend. SQLAlchemy creates missing tables at startup. To import existing data, configure the hosted PostgreSQL URL locally and run `python -m backend.migrate_sqlite` once against an empty database before starting the service. Do not run the importer against an already populated target. Keep a backup of the SQLite source.
 
-## Notes
-- SQLite is fine for local/dev.
-- For real production, use PostgreSQL to avoid data reset/locking issues.
+## Check the service
+
+Visit `/health` to check the process and `/docs` for the API reference. Set `APP_ENV=development` only for local work; production hides internal error details from browser responses while writing full traces to server logs.
